@@ -1,0 +1,30 @@
+
+Identifier = "Schwarzschild"
+
+Name = "Schwarzschild"
+
+Description = "A scrolling visual display for your buffs and important cooldowns."
+
+Author = "Jacob Bazeta"
+Email = "jacob.bazeta@gmail.com"
+
+Version = "0.1"
+
+Environment = "1.5"
+
+RunOnStartup = {
+  "main.lua",
+}
+
+SavedVariables = {
+  Schwarzschild_Placement = "character",
+}
+
+Embed = {
+  LibUnitChange = true,
+}
+
+Dependencies = {
+  LibUnitChange = {"required", "before"},
+}
+
