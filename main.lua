@@ -4,6 +4,7 @@ local LAYER_NORMAL = 0
 local LAYER_FG = 1
 local LAYER_DIVIDER = 2
 
+local baked_config = {}
 local buff_list = {
   -- Chloro/Archon
   "Radiant Spores", "Withering Vine", "Searing Vitality", "Pillaging Stone",
@@ -18,6 +19,7 @@ local buff_list = {
   -- wogue
   "Combat Pose", "Virulent Poison", "Planebound Resilience",
 }
+
 local buffs = {}
 for k, v in ipairs(buff_list) do
   local src, dest = v:match("(.*)>(.*)")
@@ -32,7 +34,7 @@ local arrangement = {}
 local bars = {}
 local abilityname = {}
 local gcd = 1.5
-local transition = 0.5
+local transition = 0.3
 
 local dividers = {}
 local barpassthrough = 2
@@ -95,8 +97,9 @@ local function MakeBar(buffdetails)
   end
   
   bar.existing = {}
-  function bar:Update(detail)
-    if self.lastbegin ~= detail.begin then
+  function bar:Update(id, detail)
+    if self.lastid ~= id then
+      self.lastid = id
       self.lastbegin = detail.begin
       self.lastend = detail.begin + detail.duration
       for _, v in ipairs(self.existing) do
@@ -106,6 +109,12 @@ local function MakeBar(buffdetails)
       table.insert(self.existing, {a = detail.begin, b = detail.begin + detail.duration - gcd, c = detail.begin + detail.duration})
       self.mutated = true
     end
+  end
+  function bar:Canceled()
+    self.existing[#self.existing].b = math.min(self.existing[#self.existing].b, Inspect.Time.Frame())
+    self.existing[#self.existing].c = math.min(self.existing[#self.existing].c, Inspect.Time.Frame())
+    self.mutated = true
+    self.lastend = Inspect.Time.Frame()
   end
   function bar:MoveTo(tx, ty)
     if self.ex ~= tx or self.ey ~= ty then
@@ -170,7 +179,7 @@ local function MakeBar(buffdetails)
   return bar
 end
 
-local function register(detail)
+local function register(id, detail)
   if not bars[detail.name] then
     bars[detail.name] = MakeBar(detail)
     table.insert(arrangement, bars[detail.name])
@@ -181,7 +190,7 @@ local function register(detail)
     bar:Finalize(detail)
   end
   
-  bar:Update(detail)
+  bar:Update(id, detail)
 end
 
 local function revisualize()
@@ -243,7 +252,17 @@ local function buffNotify(entity, newbuffs)
   for k, v in pairs(buffdetails) do
     if buffs[v.name] and (not v.caster or v.caster == playerId) then
       mutated = true
-      register(v)
+      register(k, v)
+    end
+  end
+end
+local function buffStrip(entity, removedbuffs)
+  if not (entity == Inspect.Unit.Lookup("player") or entity == Inspect.Unit.Lookup("player.target")) then return end
+  
+  for k, v in pairs(bars) do
+    if removedbuffs[v.lastid] then
+      v:Canceled()
+      mutated = true
     end
   end
 end
@@ -275,7 +294,9 @@ table.insert(Library.LibUnitChange.Register("target"), {
   end,
 "Schwarzschild", "update.target"})]]
 
-table.insert(Event.Buff.Add, {buffNotify, "Schwarzschild", "buff"})
+table.insert(Event.Buff.Add, {buffNotify, "Schwarzschild", "buff+"})
+table.insert(Event.Buff.Remove, {buffStrip, "Schwarzschild", "buff-"})
+
 
 local function abilityAdd(abilities)
   local ad = Inspect.Ability.Detail(abilities)

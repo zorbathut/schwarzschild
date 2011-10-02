@@ -14,10 +14,12 @@ Environment = "1.5"
 
 RunOnStartup = {
   "main.lua",
+  "config.lua",
+  "setup.lua",
 }
 
 SavedVariables = {
-  Schwarzschild_Placement = "character",
+  Schwarzschild_Config = "character",
 }
 
 Embed = {
