@@ -15,7 +15,9 @@ Environment = "1.5"
 RunOnStartup = {
   "main.lua",
   "config.lua",
-  "setup.lua",
+  
+  "scroll.lua",
+  "setup.lua"
 }
 
 SavedVariables = {

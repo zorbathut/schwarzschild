@@ -10,7 +10,7 @@ local buff_list = {
   "Radiant Spores", "Withering Vine", "Searing Vitality", "Pillaging Stone",
   
   -- nld
-  "Life Leech", "Looming Demise", "Necrosis", "Plague Bolt>Deathly Calling", "Searing Vitality", "Pillaging Stone", "Neddra's Torture",
+  "Life Leech", "Looming Demise", "Necrosis", "Plague Bolt>Deathly Calling", "Searing Vitality", "Pillaging Stone", "Neddra's Torture", "Defile", 
   
   -- Archon
   "Arcane Aegis", "Burning Purpose", "Shared Vigor", "Tempered Armor", "Vitality of Stone",
@@ -45,6 +45,10 @@ local border = 2
 local width = 250
 local offset = 1
 local totalwidth = 10 + offset
+
+local playerId
+local targetId
+local targetTargetId
 
 local context = UI.CreateContext("context")
 local anchor = UI.CreateFrame("Frame", "Anchor", context)
@@ -111,9 +115,14 @@ local function MakeBar(buffdetails)
     end
   end
   function bar:Canceled()
+    if #self.existing == 0 then
+      return
+    end
     self.existing[#self.existing].b = math.min(self.existing[#self.existing].b, Inspect.Time.Frame())
     self.existing[#self.existing].c = math.min(self.existing[#self.existing].c, Inspect.Time.Frame())
     self.mutated = true
+    self.lastid = nil
+    self.lastbegin = nil
     self.lastend = Inspect.Time.Frame()
   end
   function bar:MoveTo(tx, ty)
@@ -242,29 +251,50 @@ local function playerinit()
   end
 end
 
+local function active(entity)
+  if entity == playerId then return true end
+  if entity == targetId then return true end
+  if not targetId and entity == targetTargetId then return true end
+end
+
+local buffEntityMap = {}
+
 local mutated = false
 local function buffNotify(entity, newbuffs)
-  if not (entity == Inspect.Unit.Lookup("player") or entity == Inspect.Unit.Lookup("player.target")) then return end
-  
-  local playerId = Inspect.Unit.Lookup("player")
+  if not newbuffs then return end
+  if not active(entity) then return end
   
   local buffdetails = Inspect.Buff.Detail(entity, newbuffs)
   for k, v in pairs(buffdetails) do
     if buffs[v.name] and (not v.caster or v.caster == playerId) then
       mutated = true
       register(k, v)
+      if not buffEntityMap[entity] then
+        buffEntityMap[entity] = {}
+      end
+      buffEntityMap[entity][k] = true
     end
   end
 end
 local function buffStrip(entity, removedbuffs)
-  if not (entity == Inspect.Unit.Lookup("player") or entity == Inspect.Unit.Lookup("player.target")) then return end
+  if entity ~= playerId and entity ~= targetId and entity ~= targetTargetId then return end
   
   for k, v in pairs(bars) do
     if removedbuffs[v.lastid] then
       v:Canceled()
       mutated = true
+      if buffEntityMap[entity] then
+        buffEntityMap[entity][k] = nil
+      end
     end
   end
+end
+local function buffStripEntity(entity)
+  if not entity then return end
+  if buffEntityMap[entity] then
+    buffStrip(entity, buffEntityMap[entity])
+  end
+  buffEntityMap[entity] = nil
 end
 
 local function tick()
@@ -281,18 +311,6 @@ local function tick()
 end
 
 table.insert(Event.System.Update.Begin, {tick, "Schwarzschild", "update.loop"})
---[[table.insert(Library.LibUnitChange.Register("player"), {
-  function (id)
-    playerId = id
-    if playerId then playerinit() end
-  end,
-"Schwarzschild", "update.player"})
-table.insert(Library.LibUnitChange.Register("target"), {
-  function (id)
-    print("targchange")
-    targetId = id
-  end,
-"Schwarzschild", "update.target"})]]
 
 table.insert(Event.Buff.Add, {buffNotify, "Schwarzschild", "buff+"})
 table.insert(Event.Buff.Remove, {buffStrip, "Schwarzschild", "buff-"})
@@ -350,3 +368,55 @@ local function abilityRemove(abilities)
 end
 table.insert(Event.Ability.Add, {abilityAdd, "Schwarzschild", "ability+"})
 table.insert(Event.Ability.Remove, {abilityRemove, "Schwarzschild", "ability-"})
+
+
+table.insert(Library.LibUnitChange.Register("player"), {
+  function (id)
+    playerId = id
+  end,
+"Schwarzschild", "update.player"})
+playerId = Inspect.Unit.Lookup("player")
+
+local function fullRefresh()
+  if targetId then
+    buffNotify(targetId, Inspect.Buff.List(targetId))
+  elseif targetTargetId then
+    buffNotify(targetTargetId, Inspect.Buff.List(targetTargetId))
+  end
+end
+
+table.insert(Library.LibUnitChange.Register("player.target"), {
+  function (id)
+    if id then
+      local iud = Inspect.Unit.Detail(id)
+      if iud and iud.relation == "friendly" then
+        id = false
+      end
+    end
+    
+    buffStripEntity(targetId)
+    
+    targetId = id
+    
+    fullRefresh()
+  end,
+"Schwarzschild", "update.target"})
+targetId = Inspect.Unit.Lookup("player.target")
+
+table.insert(Library.LibUnitChange.Register("player.target.target"), {
+  function (id)
+    if id then
+      local iud = Inspect.Unit.Detail(id)
+      if iud and iud.relation == "friendly" then
+        id = false
+      end
+    end
+    
+    buffStripEntity(targetTargetId)
+    
+    targetTargetId = id
+    
+    fullRefresh()
+  end,
+"Schwarzschild", "update.target"})
+targetTargetId = Inspect.Unit.Lookup("player.target.target")
