@@ -33,16 +33,33 @@ function draghandle.Event:MouseMove(x, y)
 end
 
 
+
+
+local new = UI.CreateFrame("RiftButton", "new", scw:GetContent())
+new:SetText("NEW")
+
 local scrolly = sw_MakeScrolly("scroll", scw:GetContent())
 scrolly:SetPoint("TOPLEFT", scw:GetContent(), "TOPLEFT", 10, 10)
-scrolly:SetPoint("BOTTOMRIGHT", scw:GetContent(), "BOTTOMLEFT", 250, -10)
+scrolly:SetPoint("RIGHT", scw:GetContent(), "LEFT", 250, nil)
+
+new:SetPoint("XCENTER", scrolly, "XCENTER")
+new:SetPoint("BOTTOM", scw:GetContent(), "BOTTOM", nil, -10)
+
+scrolly:SetPoint("BOTTOM", new, "TOP", nil, -10)
 
 local tabs = {}
 for k = 1, 50 do
-  table.insert(tabs, {label = string.format("Label %d", k)})
+  table.insert(tabs, {label = string.format("Label %d", k), id = k})
 end
 scrolly:Set(tabs)
 
+
+local ok = UI.CreateFrame("RiftButton", "OK", scw:GetContent())
+ok:SetText("OK")
+ok:SetPoint("BOTTOMRIGHT", scw:GetContent(), "BOTTOMRIGHT", -10, -10)
+function ok.Event:LeftPress()
+  scw:SetVisible(false)
+end
 
 local function openConfig()
   scw:SetVisible(not scw:GetVisible())
