@@ -61,8 +61,10 @@ function sw_MakeScrolly(name, parent)
   local inclick = false
   local function AdjustToMouse()
     -- figure out the pos
-    local ypos = (Inspect.Mouse().y - barzone:GetTop() - (barzone:GetHeight() - litbar_play) / 2) / litbar_play
-    moveAnchorTo(anchor_max * ypos)
+    if litbar_play > 0 then
+      local ypos = (Inspect.Mouse().y - barzone:GetTop() - (barzone:GetHeight() - litbar_play) / 2) / litbar_play
+      moveAnchorTo(anchor_max * ypos)
+    end
   end
   function barzone.Event:LeftDown()
     inclick = true
@@ -146,6 +148,10 @@ function sw_MakeScrolly(name, parent)
     selected_index = index
     
     words[selected_index]:SetBackgroundColor(0.4, 0.4, 0.6)
+    
+    if self.SelectEvent then
+      self:SelectEvent(selected)
+    end
   end
   
   function main.Event:WheelBack()

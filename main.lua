@@ -5,30 +5,8 @@ local LAYER_FG = 1
 local LAYER_DIVIDER = 2
 
 local baked_config = {}
-local buff_list = {
-  -- Chloro/Archon
-  "Radiant Spores", "Withering Vine", "Searing Vitality", "Pillaging Stone",
-  
-  -- nld
-  "Life Leech", "Looming Demise", "Necrosis", "Plague Bolt>Deathly Calling", "Searing Vitality", "Pillaging Stone", "Neddra's Torture", "Defile", 
-  
-  -- Archon
-  "Arcane Aegis", "Burning Purpose", "Shared Vigor", "Tempered Armor", "Vitality of Stone",
-  "Ashen Defense", "Crumbling Resistance", "Earthen Barrage", "Lingering Dust", "Pillaging Stone", "Searing Vitality", 
-  
-  -- wogue
-  "Combat Pose", "Virulent Poison", "Planebound Resilience",
-}
 
 local buffs = {}
-for k, v in ipairs(buff_list) do
-  local src, dest = v:match("(.*)>(.*)")
-  if src then
-    buffs[dest] = src
-  else
-    buffs[v] = v
-  end
-end
 
 local arrangement = {}
 local bars = {}
@@ -102,6 +80,7 @@ local function MakeBar(buffdetails)
   
   bar.existing = {}
   function bar:Update(id, detail)
+    if not detail then return end -- probably shouldn't happen
     if self.lastid ~= id then
       self.lastid = id
       self.lastbegin = detail.begin
@@ -267,12 +246,14 @@ local function buffNotify(entity, newbuffs)
   local buffdetails = Inspect.Buff.Detail(entity, newbuffs)
   for k, v in pairs(buffdetails) do
     if buffs[v.name] and (not v.caster or v.caster == playerId) then
-      mutated = true
-      register(k, v)
-      if not buffEntityMap[entity] then
-        buffEntityMap[entity] = {}
+      if (buffs[v.name].scan_buff and entity == playerId) or (buffs[v.name].scan_debuff and entity ~= playerId) then
+        mutated = true
+        register(k, v)
+        if not buffEntityMap[entity] then
+          buffEntityMap[entity] = {}
+        end
+        buffEntityMap[entity][k] = true
       end
-      buffEntityMap[entity][k] = true
     end
   end
 end
@@ -280,11 +261,13 @@ local function buffStrip(entity, removedbuffs)
   if entity ~= playerId and entity ~= targetId and entity ~= targetTargetId then return end
   
   for k, v in pairs(bars) do
-    if removedbuffs[v.lastid] then
-      v:Canceled()
-      mutated = true
-      if buffEntityMap[entity] then
-        buffEntityMap[entity][k] = nil
+    if (buffs[v.name].scan_buff and entity == playerId) or (buffs[v.name].scan_debuff and entity ~= playerId) then
+      if removedbuffs[v.lastid] then
+        v:Canceled()
+        mutated = true
+        if buffEntityMap[entity] then
+          buffEntityMap[entity][k] = nil
+        end
       end
     end
   end
@@ -316,58 +299,53 @@ table.insert(Event.Buff.Add, {buffNotify, "Schwarzschild", "buff+"})
 table.insert(Event.Buff.Remove, {buffStrip, "Schwarzschild", "buff-"})
 
 
-local function abilityAdd(abilities)
-  local ad = Inspect.Ability.Detail(abilities)
-  for k, v in pairs(ad) do
-    local name = v.name
-    for tk, tv in pairs(buffs) do
-      if tv == name then
-        abilityname[k] = v.name
-        
-        if not bars[tk] then
-          bars[tk] = MakeBar({name = tk, abilityicon = v.icon})
-        end
-        
-        local found
-        for ttk, ttv in ipairs(arrangement) do
-          if ttv == bars[tk] then
-            found = true
-          end
-        end
-        
-        if not found then
-          bars[tk]:SetVisible(true)
-          table.insert(arrangement, bars[tk])
-          mutated = true
-        end
+
+
+function Schwarszchild_Core_Resynch()
+  local abi = Inspect.Ability.Detail(Inspect.Ability.List())
+  local abis = {}
+  for _, v in pairs(abi) do
+    abis[v.name] = v.icon
+  end
+  
+  local bufficon = {}
+  buffs = {}
+  for _, v in ipairs(Schwarzschild_Config.bars) do
+    local item = v.linked or v.buffname
+    if abis[item] then
+      buffs[v.buffname] = v
+      if not bars[v.buffname] then
+        bars[v.buffname] = MakeBar({name = v.buffname, abilityicon = abis[item]})
       end
     end
   end
-end
-local function abilityRemove(abilities)
-  for k, _ in pairs(abilities) do
-    local name = abilityname[k]
-    if name then
-      for tk, tv in pairs(buffs) do
-        if tv == name then
-          if bars[tk] then
-            for ttk, ttv in ipairs(arrangement) do
-              if ttv == bars[tk] then
-                assert(ttv.name == tk)
-                table.remove(arrangement, ttk)
-                ttv:SetVisible(false)
-                mutated = true
-                break
-              end
-            end
-          end
-        end
-      end
+  
+  -- Now we have all the right bars. First, go through arrangement and strip out dead things, then pass through buffs and add live things
+  local narrangement = {}
+  local donerrangement = {}
+  for ttk, ttv in ipairs(arrangement) do
+    if buffs[ttv.name] then
+      table.insert(narrangement, ttv)
+      donerrangement[ttv.name] = true
+    else
+      ttv:SetVisible(false)
+      mutated = true
     end
   end
+  
+  for ttk, ttv in pairs(buffs) do
+    if not donerrangement[ttk] then
+      table.insert(narrangement, bars[ttk])
+      bars[ttk]:SetVisible(true)
+      mutated = true
+    end
+  end
+  
+  arrangement = narrangement
 end
-table.insert(Event.Ability.Add, {abilityAdd, "Schwarzschild", "ability+"})
-table.insert(Event.Ability.Remove, {abilityRemove, "Schwarzschild", "ability-"})
+
+table.insert(Event.Ability.Add, {Schwarszchild_Core_Resynch, "Schwarzschild", "ability+"})
+table.insert(Event.Ability.Remove, {Schwarszchild_Core_Resynch, "Schwarzschild", "ability-"})
 
 
 table.insert(Library.LibUnitChange.Register("player"), {

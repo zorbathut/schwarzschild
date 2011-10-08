@@ -1,4 +1,11 @@
+* scroll autoscroll on choose
+
 * Stacks
+
 * Cooldowns
+* Hybrids
 * Focus warning
-* Config
+
+
+* We need one thing which is the concept of "when this shows up", then another which is "how this is displayed"
+* We've got three bars, plus tick marks, that we can use. Should be enough.

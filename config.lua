@@ -13,4 +13,6 @@ table.insert(Event.Addon.SavedVariables.Load.End, {
     if addon ~= "Schwarzchild" then return end
     
     UpdateConfig()
+    
+    Schwarszchild_Core_Resynch()
   end, "Schwarzschild", "savedvariables"})
