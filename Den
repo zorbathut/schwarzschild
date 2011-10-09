@@ -1,0 +1,19 @@
+#!/usr/local/bin/lua
+
+require "luarocks.loader"
+require "ursa"
+
+ursa.token.rule{"version", nil, "git describe --always", always_rebuild = true}
+
+ursa.token.rule{"files", nil, "find . -type f | grep -v \\.git | grep -v Den | grep -v TODO | grep -v zip | grep -v ursa | sed s*\\\\./**"}
+
+local assembly = {}
+for item in ursa.token{"files"}:gmatch("([^\n]+)") do
+  table.insert(assembly, ursa.rule{"Schwarzschild/" .. item, item, ursa.util.copy{}})
+end
+
+local nuzip = ursa.rule{string.format("Schwarzschild-%s.zip", ursa.token{"version"}), assembly, string.format("zip -9 -r -m Schwarzschild-%s.zip Schwarzschild", ursa.token{"version"})}
+
+ursa.command{ursa.command.default, {nuzip}}
+
+ursa.build{...}
