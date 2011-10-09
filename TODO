@@ -1,6 +1,11 @@
+* Added the "group buff" option
+* Stable sort to prevent as much position flickering
+
+
 * scroll autoscroll on choose
 
 * Stacks
+* "Group" checkbox
 
 * Cooldowns
 * Hybrids

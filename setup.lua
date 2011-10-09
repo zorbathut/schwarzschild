@@ -144,6 +144,24 @@ debufftext:SetPoint("LEFTCENTER", debuff, "RIGHTCENTER", 10, 0)
 
 bottom = debufftext
 
+-- "others" checkbox
+local others = UI.CreateFrame("RiftCheckbox", "others", setcontent)
+local otherstext = UI.CreateFrame("Text", "others", setcontent)
+
+otherstext:SetText("Trigger on buffs owned by other players")
+otherstext:ResizeToText()
+
+others:SetChecked(false)
+otherstext:SetPoint("TOP", bottom, "BOTTOM", nil, 10)
+
+others:SetPoint("LEFT", setcontent, "LEFT", 100, nil)
+others:SetPoint("CENTERY", otherstext, "CENTERY")
+
+otherstext:SetPoint("LEFT", others, "RIGHT", 10, nil)
+
+bottom = otherstext
+
+
 local linked, linkedcheck, linkedbox, linkedcht = makeElement("Linked ability", true)
 
 local delete = UI.CreateFrame("RiftButton", "delete", setcontent)
@@ -183,6 +201,7 @@ local function readFromConfig()
   
   buff:SetChecked(current_selected.scan_buff and true or false)
   debuff:SetChecked(current_selected.scan_debuff and true or false)
+  others:SetChecked(current_selected.include_others and true or false)
   
   setcontent:SetVisible(true)
   
@@ -196,6 +215,7 @@ local function writeToConfig()
   current_selected.linked = linkedcheck:GetChecked() and linked:GetText() or nil
   current_selected.scan_buff = buff:GetChecked() and true or nil
   current_selected.scan_debuff = debuff:GetChecked() and true or nil
+  current_selected.include_others = others:GetChecked() and true or nil
   
   resynch()
   readFromConfig()
@@ -218,6 +238,10 @@ end
 function debuff.Event:CheckboxChange()
   writeToConfig()
 end
+function others.Event:CheckboxChange()
+  writeToConfig()
+end
+
 function descrcheck.Event:CheckboxChange()
   writeToConfig()
 end
