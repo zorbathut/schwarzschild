@@ -20,9 +20,11 @@ local lastbarheight = -1
 
 local height = 24
 local border = 2
-local width = 250
-local offset = 1
-local totalwidth = 10 + offset
+local width = 400
+
+local seg1start = -1
+local seg1end = 10
+local seg1width = 250
 
 local playerId
 local targetId
@@ -35,10 +37,14 @@ anchor:SetWidth(0)
 anchor:SetHeight(0)
 
 local function translateTime(time)
-  local cpos = (time + offset - Inspect.Time.Frame()) / totalwidth
+  local tofs = time - Inspect.Time.Frame()
+  local cpos = (tofs - seg1start) / (seg1end - seg1start)
   if cpos < 0 then return 0 end
-  if cpos > 1 then return width end
-  return width * cpos
+  if cpos < 1 then return seg1width * cpos end
+  
+  tofs = tofs - seg1end
+  
+  return math.min(math.log(tofs + 1) * (seg1width / seg1end --[[needed to match slopes]] ) + seg1width, width)
 end
 
 local function MakeBar(buffdetails)
@@ -126,7 +132,7 @@ local function MakeBar(buffdetails)
     self.mutated = false
   end
   function bar:Tick()
-    while #self.existing > 0 and self.existing[1].c < Inspect.Time.Frame() - offset do table.remove(self.existing, 1) end
+    while #self.existing > 0 and self.existing[1].c < Inspect.Time.Frame() + seg1start do table.remove(self.existing, 1) end
     while #self.yellow < #self.existing do
       table.insert(self.yellow, MakeMiniBar(0, 0.5, 0.5))
       table.insert(self.green, MakeMiniBar(0, 0.8, 0))
@@ -215,10 +221,10 @@ local function playerinit()
     gcd = 1
   end
   
-  for i = 0, totalwidth - offset, gcd do
+  local function makebar(coord, tex)
     local whitebar = UI.CreateFrame("Frame", "divider", context)
     whitebar:SetLayer(LAYER_DIVIDER)
-    whitebar:SetPoint("TOPCENTER", anchor, "CENTER", translateTime(i + Inspect.Time.Frame()), -barpassthrough)
+    whitebar:SetPoint("TOPCENTER", anchor, "CENTER", translateTime(coord + Inspect.Time.Frame()), -barpassthrough)
     whitebar:SetHeight(barpassthrough * 2)
     whitebar:SetWidth(1)
     if i == 0 then
@@ -227,7 +233,25 @@ local function playerinit()
       whitebar:SetBackgroundColor(1, 1, 1, 0.2)
     end
     table.insert(dividers, whitebar)
+    
+    if tex then
+      local text = UI.CreateFrame("Text", "dividertext", context)
+      text:SetText(tex)
+      text:SetFontSize(8)
+      text:SetBackgroundColor(0, 0, 0)
+      text:ResizeToText()
+      text:SetPoint("BOTTOMCENTER", whitebar, "TOPCENTER", 0, -1)
+    end
   end
+  
+  for i = 0, seg1end, gcd do
+    makebar(i)
+  end
+  makebar(15, "15")
+  makebar(30, "30")
+  makebar(60, "1m")
+  makebar(60*2, "2m")
+  makebar(60*5, "5m")
 end
 
 local function active(entity)
@@ -261,12 +285,14 @@ local function buffStrip(entity, removedbuffs)
   if entity ~= playerId and entity ~= targetId and entity ~= targetTargetId then return end
   
   for k, v in pairs(bars) do
-    if (buffs[v.name].scan_buff and entity == playerId) or (buffs[v.name].scan_debuff and entity ~= playerId) then
-      if removedbuffs[v.lastid] then
-        v:Canceled()
-        mutated = true
-        if buffEntityMap[entity] then
-          buffEntityMap[entity][k] = nil
+    if buffs[v.name] then
+      if (buffs[v.name].scan_buff and entity == playerId) or (buffs[v.name].scan_debuff and entity ~= playerId) then
+        if removedbuffs[v.lastid] then
+          v:Canceled()
+          mutated = true
+          if buffEntityMap[entity] then
+            buffEntityMap[entity][k] = nil
+          end
         end
       end
     end
@@ -315,7 +341,7 @@ function Schwarszchild_Core_Resynch()
     if abis[item] then
       buffs[v.buffname] = v
       if not bars[v.buffname] then
-        bars[v.buffname] = MakeBar({name = v.buffname, abilityicon = abis[item]})
+        bars[v.buffname] = MakeBar({name = v.buffname, abilityicon = abis[v.buffname] or abis[item]})
       end
     end
   end
