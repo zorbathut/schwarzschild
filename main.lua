@@ -187,8 +187,22 @@ local function register(id, detail)
   bar:Update(id, detail)
 end
 
+local function stablesort(tab, predicate)
+  local n = #tab
+  while n > 1 do
+    local newn = 0
+    for i = 2, n do
+      if predicate(tab[i], tab[i - 1]) then
+        tab[i], tab[i - 1] = tab[i - 1], tab[i]
+        newn = i
+      end
+    end
+    n = newn
+  end
+end
+
 local function revisualize()
-  table.sort(arrangement, function (a, b)
+  stablesort(arrangement, function (a, b)
     if a.lastend and b.lastend then return a.lastend < b.lastend end
     if not a.lastend and not b.lastend then return a.name < b.name end
     return b.lastend
