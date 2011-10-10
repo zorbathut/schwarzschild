@@ -194,8 +194,22 @@ local function register(id, detail)
   bar:Update(id, detail)
 end
 
+local function stablesort(tab, predicate)
+  local n = #tab
+  while n > 1 do
+    local newn = 0
+    for i = 2, n do
+      if predicate(tab[i], tab[i - 1]) then
+        tab[i], tab[i - 1] = tab[i - 1], tab[i]
+        newn = i
+      end
+    end
+    n = newn
+  end
+end
+
 local function revisualize()
-  table.sort(arrangement, function (a, b)
+  stablesort(arrangement, function (a, b)
     if a.lastend and b.lastend then return a.lastend < b.lastend end
     if not a.lastend and not b.lastend then return a.name < b.name end
     return b.lastend
@@ -234,7 +248,7 @@ local function playerinit()
     whitebar:SetPoint("TOPCENTER", anchor, "CENTER", translateTime(coord + Inspect.Time.Frame()), -barpassthrough)
     whitebar:SetHeight(barpassthrough * 2)
     whitebar:SetWidth(1)
-    if i == 0 then
+    if coord == 0 then
       whitebar:SetBackgroundColor(1, 1, 1, 0.5)
     else
       whitebar:SetBackgroundColor(1, 1, 1, 0.2)
@@ -276,7 +290,7 @@ local function buffNotify(entity, newbuffs)
   
   local buffdetails = Inspect.Buff.Detail(entity, newbuffs)
   for k, v in pairs(buffdetails) do
-    if buffs[v.name] and (not v.caster or v.caster == playerId) then
+    if buffs[v.name] and (not v.caster or v.caster == playerId or buffs[v.name].include_others) then
       if (buffs[v.name].scan_buff and entity == playerId) or (buffs[v.name].scan_debuff and entity ~= playerId) then
         mutated = true
         register(k, v)
