@@ -4,7 +4,7 @@ local resynch
 local context = UI.CreateContext("config")
 local scw = UI.CreateFrame("RiftWindow", "window", context)
 scw:SetVisible(false)
-scw:SetTitle("Schwarszchild Configuration")
+scw:SetTitle("Schwarzschild Configuration")
 
 scw:SetPoint("CENTER", UIParent, "CENTER")
 scw.x = 0
@@ -39,6 +39,15 @@ setcontent:SetPoint("LEFT", scrolly, "RIGHT", 10, nil)
 setcontent:SetPoint("BOTTOM", ok, "TOP", nil, -10)
 
 setcontent:SetVisible(false)
+
+local handle = UI.CreateFrame("RiftCheckbox", "movehandle", scw:GetContent())
+local handletext = UI.CreateFrame("Text", "movehandletext", scw:GetContent())
+
+handle:SetPoint("LEFTCENTER", new, "RIGHTCENTER", 100, 0)
+
+handletext:SetPoint("LEFTCENTER", handle, "RIGHTCENTER", 0, 0)
+handletext:SetText("Movement handles")
+handletext:ResizeToText()
 
 
 -- Now we lay out the content elements
@@ -200,7 +209,7 @@ local function writeToConfig()
   resynch()
   readFromConfig()
   
-  Schwarszchild_Core_Resynch()
+  Schwarzschild_Core_Resynch()
 end
 function descr.Event:TextfieldChange()
   writeToConfig()
@@ -298,7 +307,11 @@ local function openConfig()
   resynch()
 end
 
-table.insert(Command.Slash.Register("sc"), {openConfig, "Schwarzschild", "config"})
-table.insert(Command.Slash.Register("schwarszchild"), {openConfig, "Schwarzschild", "config"})
+function handle.Event:CheckboxChange()
+  Schwarzschild_Changemove(handle:GetChecked())
+end
 
-print("Welcome to Schwarszchild! Type \"/sc\" to open the config.")
+table.insert(Command.Slash.Register("sc"), {openConfig, "Schwarzschild", "config"})
+table.insert(Command.Slash.Register("schwarzschild"), {openConfig, "Schwarzschild", "config"})
+
+print("Welcome to Schwarzschild! Type \"/sc\" to open the config.")

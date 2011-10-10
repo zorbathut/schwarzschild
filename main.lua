@@ -31,8 +31,15 @@ local targetId
 local targetTargetId
 
 local context = UI.CreateContext("context")
+
+local m_anchor = UI.CreateFrame("Frame", "MAnchor", context)
+m_anchor:SetWidth(0)
+m_anchor:SetHeight(0)
+m_anchor:SetPoint("CENTER", UIParent, "BOTTOMCENTER", 0, -400)
+
+-- center based on the m_anchor
 local anchor = UI.CreateFrame("Frame", "Anchor", context)
-anchor:SetPoint("CENTER", UIParent, "BOTTOMCENTER", -(width + height) / 2 + height, -400)
+anchor:SetPoint("CENTER", m_anchor, "BOTTOMCENTER", -(width + height) / 2 + height, 0)
 anchor:SetWidth(0)
 anchor:SetHeight(0)
 
@@ -327,7 +334,7 @@ table.insert(Event.Buff.Remove, {buffStrip, "Schwarzschild", "buff-"})
 
 
 
-function Schwarszchild_Core_Resynch()
+function Schwarzschild_Core_Resynch()
   local abi = Inspect.Ability.Detail(Inspect.Ability.List())
   local abis = {}
   for _, v in pairs(abi) do
@@ -370,8 +377,8 @@ function Schwarszchild_Core_Resynch()
   arrangement = narrangement
 end
 
-table.insert(Event.Ability.Add, {Schwarszchild_Core_Resynch, "Schwarzschild", "ability+"})
-table.insert(Event.Ability.Remove, {Schwarszchild_Core_Resynch, "Schwarzschild", "ability-"})
+table.insert(Event.Ability.Add, {Schwarzschild_Core_Resynch, "Schwarzschild", "ability+"})
+table.insert(Event.Ability.Remove, {Schwarzschild_Core_Resynch, "Schwarzschild", "ability-"})
 
 
 table.insert(Library.LibUnitChange.Register("player"), {
@@ -424,3 +431,95 @@ table.insert(Library.LibUnitChange.Register("player.target.target"), {
   end,
 "Schwarzschild", "update.target"})
 targetTargetId = Inspect.Unit.Lookup("player.target.target")
+
+
+
+
+-- Movability
+local movables = UI.CreateFrame("Frame", "movables", context)
+movables:SetVisible(false)
+do
+  local movehandle = UI.CreateFrame("Text", "movehandle", movables)
+  movehandle:SetFontSize(10)
+  movehandle:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT", 0, -2)
+  movehandle:SetText("Move: 0, 0")
+  movehandle:SetHeight(movehandle:GetFullHeight())
+  movehandle:SetWidth(100)
+  movehandle:SetBackgroundColor(0, 0, 0)
+  
+  function movehandle.Event:LeftDown()
+    self.moving = true
+    local mouseData = Inspect.Mouse()
+    self.sx = Schwarzschild_Config.location.x - mouseData.x
+    self.sy = Schwarzschild_Config.location.y - mouseData.y
+  end
+
+  function movehandle.Event:MouseMove(x, y)
+    if self.moving then
+      Schwarzschild_Config.location.x = x + self.sx
+      Schwarzschild_Config.location.y = y + self.sy
+      
+      Schwarzschild_Relocate()
+    end
+  end
+
+  function movehandle.Event:LeftUp()
+    self.moving = false
+  end
+  function movehandle.Event:LeftUpoutside()
+    self.moving = false
+  end
+  
+  local anchorhandle = UI.CreateFrame("Text", "anchorhandle", movables)
+  anchorhandle:SetFontSize(10)
+  anchorhandle:SetPoint("BOTTOMLEFT", movehandle, "BOTTOMRIGHT", 2, 0)
+  anchorhandle:SetText("Alignment: BOTTOMCENTER")
+  anchorhandle:SetPoint("TOP", movehandle, "TOP")
+  anchorhandle:SetHeight(movehandle:GetFullHeight())
+  anchorhandle:SetWidth(150)
+  anchorhandle:SetBackgroundColor(0, 0, 0)
+  
+  local points = {
+    {"TOPLEFT", 0, 0},
+    {"TOPCENTER", 0.5, 0},
+    {"TOPRIGHT", 1, 0},
+    {"CENTERLEFT", 0, 0.5},
+    {"CENTER", 0.5, 0.5},
+    {"CENTERRIGHT", 1, 0.5},
+    {"BOTTOMLEFT", 0, 1},
+    {"BOTTOMCENTER", 0.5, 1},
+    {"BOTTOMRIGHT", 1, 1}
+  }
+    
+  function anchorhandle.Event:LeftClick()
+    local cidx
+    for i = 1, #points do
+      if points[i][1] == Schwarzschild_Config.location.alignment then
+        cidx = i
+      end
+    end
+    if not cidx then cidx = #points end
+    cidx = cidx + 1
+    if cidx > #points then cidx = 1 end
+    Schwarzschild_Config.location.alignment = points[cidx][1]
+    
+    Schwarzschild_Config.location.x = (points[cidx][2] * 2 - 1) * -300
+    Schwarzschild_Config.location.y = (points[cidx][3] * 2 - 1) * -300
+    
+    dump(Schwarzschild_Config.location)
+    
+    Schwarzschild_Relocate()
+  end
+
+  
+  function Schwarzschild_Relocate()
+    m_anchor:SetPoint("CENTER", UIParent, Schwarzschild_Config.location.alignment, Schwarzschild_Config.location.x, Schwarzschild_Config.location.y)
+    movehandle:SetText(string.format("Move: %d, %d", Schwarzschild_Config.location.x, Schwarzschild_Config.location.y))
+    anchorhandle:SetText(string.format("Alignment: %s", Schwarzschild_Config.location.alignment))
+  end
+  
+  function Schwarzschild_Changemove(visible)
+    movables:SetVisible(visible)
+  end
+end
+
