@@ -9,7 +9,11 @@ ursa.token.rule{"files", nil, "find . -type f | grep -v \\.git | grep -v Den | g
 
 local assembly = {}
 for item in ursa.token{"files"}:gmatch("([^\n]+)") do
-  table.insert(assembly, ursa.rule{"Schwarzschild/" .. item, item, ursa.util.copy{}})
+  if item == "RiftAddon.toc" then
+    table.insert(assembly, ursa.rule{"Schwarzschild/" .. item, item, ursa.util.system_template{('sed -e "s/@@VERSION@@/%s/" $SOURCE > $TARGET'):format(ursa.token{"version"})}})
+  else
+    table.insert(assembly, ursa.rule{"Schwarzschild/" .. item, item, ursa.util.copy{}})
+  end
 end
 
 local nuzip = ursa.rule{string.format("Schwarzschild-%s.zip", ursa.token{"version"}), assembly, string.format("zip -9 -r -m Schwarzschild-%s.zip Schwarzschild", ursa.token{"version"})}

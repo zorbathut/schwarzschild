@@ -8,7 +8,7 @@ Description = "A scrolling visual display for your buffs and important cooldowns
 Author = "Jacob Bazeta"
 Email = "jacob.bazeta@gmail.com"
 
-Version = "0.1"
+Version = "@@VERSION@@"
 
 Environment = "1.5"
 
