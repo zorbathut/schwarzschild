@@ -349,6 +349,8 @@ table.insert(Event.Buff.Remove, {buffStrip, "Schwarzschild", "buff-"})
 
 
 function Schwarzschild_Core_Resynch()
+  if not Inspect.Ability.List() then return end
+  
   local abi = Inspect.Ability.Detail(Inspect.Ability.List())
   local abis = {}
   for _, v in pairs(abi) do
