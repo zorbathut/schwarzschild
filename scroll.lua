@@ -39,7 +39,11 @@ function sw_MakeScrolly(name, parent)
   local function moveAnchorTo(newpos)
     anchor = math.min(math.max(newpos, 0), anchor_max)
     text_anchor:SetPoint("BOTTOMLEFT", textzone, "TOPLEFT", 0, -anchor)
-    litbar:SetPoint("TOP", main, "TOP", nil, (anchor / anchor_max) * litbar_play)
+    local amx = anchor_max
+    if amx == 0 then
+      amx = 1
+    end
+    litbar:SetPoint("TOP", main, "TOP", nil, (anchor / amx) * litbar_play)
   end
   local function moveAnchor(delta)
     moveAnchorTo(anchor + delta)
