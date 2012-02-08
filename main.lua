@@ -162,6 +162,7 @@ local function MakeBar(buffdetails)
       local it = (self.t - Inspect.Time.Frame()) / transition
       local t = 1 - it
       local sp = math.sqrt(it - it*it)
+      if t < 0 then t, sp = 0, 0 end
       self.x, self.y = self.sx*it+self.ex*t+(self.sy-self.ey)*sp*self.tm, self.sy*it+self.ey*t+(self.ex-self.sx)*sp*self.tm
     else
       self.x, self.y = self.ex, self.ey
