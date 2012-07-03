@@ -1,4 +1,4 @@
-#!/usr/local/bin/lua
+#!env lua
 
 require "luarocks.loader"
 require "ursa"
