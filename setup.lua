@@ -47,7 +47,6 @@ handle:SetPoint("LEFTCENTER", new, "RIGHTCENTER", 100, 0)
 
 handletext:SetPoint("LEFTCENTER", handle, "RIGHTCENTER", 0, 0)
 handletext:SetText("Movement handles")
-handletext:ResizeToText()
 
 
 -- Now we lay out the content elements
@@ -57,7 +56,7 @@ bigname:SetFontSize(24)
 bigname:SetPoint("TOPCENTER", setcontent, "TOPCENTER")
 
 bigname:SetText("ooga")
-bigname:SetHeight(bigname:GetFullHeight())
+bigname:SetHeight(bigname:GetHeight())
 
 local bottom = bigname
 local function makeElement(name, checke)
@@ -89,7 +88,6 @@ local function makeElement(name, checke)
   
   iddescr:SetPoint("CENTERY", idtex, "CENTERY")
   iddescr:SetText(name)
-  iddescr:ResizeToText()
 
   local function boxit(di)
     if di then
@@ -135,9 +133,7 @@ local bufftext = UI.CreateFrame("Text", "buff", setcontent)
 local debufftext = UI.CreateFrame("Text", "debuff", setcontent)
 
 bufftext:SetText("Buff")
-bufftext:ResizeToText()
 debufftext:SetText("Debuff")
-debufftext:ResizeToText()
 
 buff:SetChecked(true)
 
@@ -158,7 +154,6 @@ local others = UI.CreateFrame("RiftCheckbox", "others", setcontent)
 local otherstext = UI.CreateFrame("Text", "others", setcontent)
 
 otherstext:SetText("Trigger on buffs owned by other players")
-otherstext:ResizeToText()
 
 others:SetChecked(false)
 otherstext:SetPoint("TOP", bottom, "BOTTOM", nil, 10)
@@ -190,7 +185,6 @@ local function readFromConfig()
   linkedcht(current_selected.linked or buffname:GetText())
   
   bigname:SetText(current_selected.label or buffname:GetText())
-  bigname:ResizeToText()
   
   if current_selected.label then
     descrcheck:SetChecked(true)

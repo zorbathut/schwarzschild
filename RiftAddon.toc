@@ -10,7 +10,7 @@ Email = "jacob.bazeta@gmail.com"
 
 Version = "@@VERSION@@"
 
-Environment = {"1.5", "1.6"}
+Environment = {"1.9", "1.10"}
 
 RunOnStartup = {
   "main.lua",
@@ -26,9 +26,11 @@ SavedVariables = {
 
 Embed = {
   LibUnitChange = true,
+  LibAsyncTextures = true,
 }
 
 Dependencies = {
   LibUnitChange = {"required", "before"},
+  LibAsyncTextures = {"required", "before"},
 }
 

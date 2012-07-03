@@ -64,7 +64,7 @@ local function MakeBar(buffdetails)
   icon:SetPoint("TOPRIGHT", bar, "TOPLEFT")
   icon:SetHeight(height)
   icon:SetWidth(height)
-  icon:SetTexture("Rift", buffdetails.icon or buffdetails.abilityicon)
+  icon:SetTextureAsync("Rift", buffdetails.icon or buffdetails.abilityicon)
   
   local cover = UI.CreateFrame("Frame", "Bar", bar)
   cover:SetPoint("TOPLEFT", icon, "TOPLEFT")
@@ -174,7 +174,7 @@ local function MakeBar(buffdetails)
     self:SetPoint("TOPLEFT", anchor, "CENTER", self.x, self.y)
   end
   function bar:Finalize(details)
-    icon:SetTexture("Rift", details.icon)
+    icon:SetTextureAsync("Rift", details.icon)
     self.finalized = true
   end
   
@@ -261,7 +261,6 @@ local function playerinit()
       text:SetText(tex)
       text:SetFontSize(8)
       text:SetBackgroundColor(0, 0, 0)
-      text:ResizeToText()
       text:SetPoint("BOTTOMCENTER", whitebar, "TOPCENTER", 0, -1)
     end
   end
@@ -291,7 +290,7 @@ local function buffNotify(entity, newbuffs)
   
   local buffdetails = Inspect.Buff.Detail(entity, newbuffs)
   for k, v in pairs(buffdetails) do
-    if buffs[v.name] and (not v.caster or v.caster == playerId or buffs[v.name].include_others) then
+    if buffs[v.name] and (not v.caster or v.caster == playerId or buffs[v.name].include_others) and v.begin then
       if (buffs[v.name].scan_buff and entity == playerId) or (buffs[v.name].scan_debuff and entity ~= playerId) then
         mutated = true
         register(k, v)
@@ -350,9 +349,9 @@ table.insert(Event.Buff.Remove, {buffStrip, "Schwarzschild", "buff-"})
 
 
 function Schwarzschild_Core_Resynch()
-  if not Inspect.Ability.List() then return end
+  if not Inspect.Ability.New.List() then return end
   
-  local abi = Inspect.Ability.Detail(Inspect.Ability.List())
+  local abi = Inspect.Ability.New.Detail(Inspect.Ability.New.List())
   local abis = {}
   for _, v in pairs(abi) do
     abis[v.name] = v.icon
@@ -394,8 +393,8 @@ function Schwarzschild_Core_Resynch()
   arrangement = narrangement
 end
 
-table.insert(Event.Ability.Add, {Schwarzschild_Core_Resynch, "Schwarzschild", "ability+"})
-table.insert(Event.Ability.Remove, {Schwarzschild_Core_Resynch, "Schwarzschild", "ability-"})
+table.insert(Event.Ability.New.Add, {Schwarzschild_Core_Resynch, "Schwarzschild", "ability+"})
+table.insert(Event.Ability.New.Remove, {Schwarzschild_Core_Resynch, "Schwarzschild", "ability-"})
 
 
 table.insert(Library.LibUnitChange.Register("player"), {
@@ -460,7 +459,7 @@ do
   movehandle:SetFontSize(10)
   movehandle:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT", 0, -2)
   movehandle:SetText("Move: 0, 0")
-  movehandle:SetHeight(movehandle:GetFullHeight())
+  movehandle:SetHeight(movehandle:GetHeight())
   movehandle:SetWidth(100)
   movehandle:SetBackgroundColor(0, 0, 0)
   
@@ -492,7 +491,7 @@ do
   anchorhandle:SetPoint("BOTTOMLEFT", movehandle, "BOTTOMRIGHT", 2, 0)
   anchorhandle:SetText("Alignment: BOTTOMCENTER")
   anchorhandle:SetPoint("TOP", movehandle, "TOP")
-  anchorhandle:SetHeight(movehandle:GetFullHeight())
+  anchorhandle:SetHeight(movehandle:GetHeight())
   anchorhandle:SetWidth(150)
   anchorhandle:SetBackgroundColor(0, 0, 0)
   

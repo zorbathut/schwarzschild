@@ -103,7 +103,7 @@ function sw_MakeScrolly(name, parent)
       newword:SetPoint("RIGHT", textzone, "RIGHT", -2, nil)
       newword:SetText("test")
       newword:SetFontSize(14)
-      item_height = newword:GetFullHeight()
+      item_height = newword:GetHeight()
       newword:SetHeight(item_height)
       
       newword:SetPoint("TOP", words[#words], "BOTTOM")
